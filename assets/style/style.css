@@ -1,0 +1,71 @@
+body{
+    background-color: #000;
+    overflow: hidden;
+}
+
+span#info{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+
+    color: red;
+
+    font-family: sans-serif;
+}
+
+#out{
+    position: absolute;
+    top:0;
+    left:0;
+
+    width:100%;
+    height: 100%;
+
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#out>img{
+    position : absolute;
+
+    top: 0;
+    left: 0;
+
+    transform: translate(-50%, -50%);
+}
+
+div.shadow{
+    position: absolute;
+    top:0;
+    left:0;
+
+    background-color: rgba(255, 255, 255, 0.048);
+    width: 200px;
+    height: 200px;
+
+    border-radius: 100px;
+    transform:  translate(-50%, -10%) scale(0.7, 0.2);
+}
+div.shadow>div{
+    position: relative;
+    top:40px;
+    left:40px;
+
+    background-color: rgba(255, 255, 255, 0.048);
+    width: 120px;
+    height: 120px;
+    border-radius: 60px;
+}
+div.ghostShadow, div.ghostShadow>div{
+    background-color: rgba(255, 224, 188, 0.34);
+}
+div.enemyShadow, div.enemyShadow>div{
+    background-color: rgba(255, 0, 0, 0.48);
+}
+div.unknownShadow, div.unknownShadow>div{
+    background-color: rgba(80, 242, 242, 0.2);
+}
+.red{
+    background-color: red;
+}
+    

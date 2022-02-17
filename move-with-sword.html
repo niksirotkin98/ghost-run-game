@@ -1,0 +1,235 @@
+<html>
+    <head>
+        <title>
+            Canvas
+        </title>
+        <style>
+            .object{
+                position: absolute;
+
+                top:0;
+                left:0;
+            }
+            .scene{
+                width: 100vw;
+                height: 100vh;
+            }
+            .output{
+                font-family: sans-serif;
+                color: black;
+                background-color: rgba(255,255,255,0.5);
+            }
+            *{
+                cursor: url('./src/img/cursor2.svg') 15 15, auto;
+            }
+        </style>
+        <script src='./assets/script/classes.js'></script>
+        <script src='./assets/script/FastBlur.js'></script>
+    </head>
+    <body>
+        <canvas id="scene" class="object scene" width="100vw" height="100vh"></canvas>
+        <span id="output" class="object output"></span>
+        <script>
+            'use strict'
+
+            let imglist = [
+                    {name:'wall1', url:'./src/img/wall1.png'},
+                    {name:'wall2', url:'./src/img/wall2.png'},
+                    {name:'enemy', url:'./src/img/enemy.png'},
+                    {name:'ghost', url:'./src/img/ghost.png'},
+                    {name:'hole', url:'./src/img/hole.png'},
+                    {name:'blade1', url:'./src/img/blade1.png'},
+                    {name:'man1', url:'./src/img/man1.png'},
+                    {name:'day_guy_mad', url:'./src/img/day_guy_mad.png'},
+                    {name:'night_guy_mad', url:'./src/img/night_guy_mad.png'},
+                    //{name:'day_guy', url:'./src/img/day_guy.png'},
+                    //{name:'night_guy', url:'./src/img/night_guy.png'},
+                    {name:'star', url:'./src/img/star.png'},
+                    {name:'aim', url:'./src/img/aim.png'},
+                    {name:'shadow', url:'./src/img/shadow.png'},
+                    {name:'unknown', url:'./src/img/unknown.png'},
+                    {name:'cross', url:'./src/img/cross.png'},
+                    {name:'orange_cross', url:'./src/img/orange_cross.png'},
+                    {name:'red_cross', url:'./src/img/red_cross.png'},
+                    {name:'outline', url:'./src/img/outline.png'},
+                ],
+                isrc = new IMAGESRC(imglist);
+
+            let dt = 0, fps = 0, odt = 0, cdt = 0, t=0,
+                screen = new SCREEN(scene),
+                cam = new CCAMERA(scene, 0,0, screen),
+                mouse = {
+                    x:0,
+                    y:0,
+                    rx:0,
+                    ry:0,
+                    r:V(0,0),
+                    update(e){
+                        this.x = e.x;
+                        this.y = e.y;
+                        this.rx = (this.x + screen.w2m)/cam.scale.x + cam.x;
+                        this.ry = -(this.y + screen.h2m)/cam.scale.y - cam.y;
+                        this.r = V(this.rx,this.ry);
+                        a = V(this.rx, this.ry);
+                    }
+                },
+                newPos = V(0,0),
+                images = [],
+                player = new BOX(0,0),
+                newPosPlayer = V(0,-200),
+                playerVisual = [],
+                holes = [],
+                cameraChase = true,
+                scale = V(1,1),
+                a = V(0,0),
+                mtop = mouse.r.sub(player.coords),
+                attack = false, at = 0, alen = 70, aclen = alen, maxlen = 100, adur = 250;
+
+            player.z = 0;
+            playerVisual.push(isrc.getCVISUAL('shadow',0,0,200,50, V(0,0)));
+            playerVisual[0].setZ(-2000);
+            playerVisual.push(isrc.getCVISUAL('blade1',0,0,200,200));
+            playerVisual.push(isrc.getCVISUAL('man1',0,0,200,200, V(0,75)));
+
+            images.push(...playerVisual);
+            images.push(isrc.getCVISUAL('wall1',0,0,200,200, V(0,75)))
+            images.push(isrc.getCVISUAL('cross',0,0,50,50));
+            images[4].setLink(mouse,{from:'r',to:'coords'})
+            images.push(new CLINE(V(0,0),V(100,100)));
+            images[5].setLink(player,{from:'coords',to:'to'})
+            images.push(new CLINE(V(0,0),V(100,100),'red'));
+            images.push(new CLINE(V(0,0),V(100,100),'yellow'));
+            images.push(isrc.getCVISUAL('enemy',200,-150,200,200, V(0,75)))
+            images[7].setZ(75);
+
+            for(let i of images) cam.addImage(i);
+
+            mouse.update = mouse.update.bind(mouse);
+            window.addEventListener('mousemove', mouse.update);
+            window.addEventListener('mousedown',(e)=>{
+                if(cameraChase){
+                    newPosPlayer = V(mouse.rx,mouse.ry);
+                }else newPos = V(mouse.rx,-mouse.ry);
+            })
+
+            window.addEventListener('keydown',function({keyCode:key}){
+                let dxy = 50/cam.scale.x;
+
+                newPos = cam.coords.getSelf();
+                newPosPlayer = player.coords.getSelf();
+
+                switch(key){
+                    case 81:
+                        player.z+=2;
+                        break;
+                    case 69:
+                        player.z-=2;
+                        break;
+                    case 37:
+                        newPos.x += -dxy;
+                        break;
+                    case 38:
+                        newPos.y += -dxy;
+                        break;
+                    case 39:
+                        newPos.x += dxy;
+                        break;
+                    case 40:
+                        newPos.y += dxy;
+                        break;
+                    case 65:
+                        newPosPlayer.move(-dxy,0); 
+                        break;
+                    case 87:
+                        newPosPlayer.move(0,dxy); 
+                        break;
+                    case 68:
+                        newPosPlayer.move(dxy,0); 
+                        break;
+                    case 83:
+                        newPosPlayer.move(0,-dxy); 
+                        break;
+                    case 32:
+                        cameraChase = cameraChase? false:true;
+                        break;
+                    case 70:
+                        attack = true;
+                        break;
+                    default: console.log(key);
+                }
+            })
+
+            window.addEventListener('wheel',function({deltaY:y}){
+                if(false){
+                    let i = y>0? scene.blur - 0.5: scene.blur + 0.5;
+                    i = i < 0? 0: i;
+                    scene.setBlur(i);
+                }else{
+                    let s = y>0? scale.x*0.9: scale.x*1.1;
+                    scale = V(s,s);
+                } 
+            })
+
+            function update(ndt){
+                let s = 0.9 + 0.1*sin(ndt/(PI*25));
+
+                dt = ndt-odt;
+                odt = ndt;
+                fps = Math.round(1000/cdt);
+                cdt = (cdt*19+dt)/20;
+
+                
+                if(attack && at < adur){
+                    aclen = alen + abs(sin(at/adur*PI))*maxlen;
+                    at+=dt;
+                }else{
+                    attack = false;
+                    at = 0;
+                }
+
+                mouse.update({x:mouse.x, y:mouse.y});
+                
+                mtop = mouse.r.sub(player.coords);
+
+                let nmtop = V(0,40).sum(player.coords.sum(mtop.mul(aclen/mtop.len()))),
+                    ang = -mtop.getAngle()+PI/2;
+
+                playerVisual[0].setCoords(player.coords);
+                playerVisual[1].setCoords(nmtop);
+                playerVisual[1].setAngle(ang);
+                playerVisual[2].setCoords(player.coords);
+                playerVisual[2].anchor = V(0,75).sum(V(0,player.z));
+                playerVisual[0].setScale(V(s,s));
+                player.coords.setV(player.coords.mul(4).sum(newPosPlayer).mul(1/5));
+
+                images[6].coords = player.coords.getSelf();
+                images[6].to = a.getSelf();
+                images[7].setCoords(player.coords.sum(V(0,40)));
+                images[7].to = nmtop;
+
+                if(cameraChase){
+                    cam.coords.setV(cam.coords.mul(19).sum(newPosPlayer.mul2(1,-1).sum(V(0,-75))).mul(0.05));
+                } else {
+                    cam.coords.setV(cam.coords.mul(4).sum(newPos).mul(0.2));
+                }
+                cam.setScale(scale.x,scale.y);
+                //cam.setAngle(Math.sin(ndt*0.0025)*10);
+
+                images[6].update();
+                cam.linkUpdate();
+                cam.draw();
+
+                output.innerText = `fps:${fps}\ncam:${round(cam.x)},${round(cam.y)}\ncam scale:${cam.scale.x},${cam.scale.y}`+
+                //`\na1:${round(a1.x)},${round(a1.y)}`+
+                //`\na2:${round(a2.x)},${round(a2.y)}`+
+                `\nmouse:${round(100*mouse.rx)/100},${round(100*mouse.ry)/100}`+
+                `\nplayer->mouse:${round(images[6].l)}, a:${images[6].to.sub(images[6].coords).getAngle()/PI*180}`;
+                //`\nshowed objects count:${realImages.length}`;
+                requestAnimationFrame(update);
+            }
+            update(0);
+
+            
+        </script>
+    </body>
+</html>

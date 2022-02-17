@@ -1,0 +1,186 @@
+<html>
+    <head>
+        <title>Circle collision</title>
+        <style>
+            body{
+                overflow: hidden;
+            }
+            .circle{
+                position:absolute;
+                width:100px;
+                height: 100px;
+                top:0;
+                left:0;
+
+                transform: translate(-50%, -50%);
+
+                border-radius: 100%;
+            }
+            .centre{
+                position:absolute;
+                width:5px;
+                height:5px;
+                top:calc(50% - 2.5px);
+                left:calc(50% - 2.5px);
+
+                border-radius: 5px;
+
+                background-color: black;
+            }
+
+            #circle1{
+                background-color: rgba(200, 20, 50, 0.356);
+            }
+            #circle2{
+                background-color: rgba(20, 200, 116, 0.432);
+            }
+            #circle2.oncollision{
+                background-color: rgba(86, 255, 44, 0.767);
+            }
+            #circle3{
+                background-color: rgba(167, 200, 20, 0.432);
+            }
+            #svg{
+                position: absolute;
+                z-index: -1;
+
+                top:0;
+                left:0;
+                width:100%;
+                height:100%;
+            }
+            #output{
+                position: absolute;
+                top:10px;
+                left:10px;
+
+                z-index: 5;
+
+                font-family: sans-serif;
+            }
+        </style>
+    </head>
+    <body>
+        <svg id="svg">
+            <line id='line1' x1="30" y1="20" x2="30" y2="80" style="stroke:rgba(38, 0, 255, 0.815);stroke-width:2" />
+            <line id='line2' x1="30" y1="20" x2="30" y2="80" style="stroke:rgba(255, 0, 55, 0.356);stroke-width:2" />
+        </svg>
+        <div id="circle1" class="circle"><div class="centre"></div></div>
+        <div id="circle2" class="circle"><div class="centre"></div></div>
+        <div id="circle3" class="circle"><div class="centre"></div></div>
+        <span id="output"></span>
+    </body>
+    <script>
+        class CIRCLE{
+            x = 0;
+            y = 0;
+            radius = 0;
+            name = "unknown"
+
+            constructor(x,y,r,name){
+                this.x = x;
+                this.y = y;
+                this.radius = r;
+                this.name = name || this.name;
+
+                return this;
+            }
+
+            setVisual(obj){
+                this.visual = obj;
+                return this;
+            }
+
+            update(){
+                this.visual.style.left = this.x+"px";
+                this.visual.style.top = this.y+"px";
+                this.visual.style.width = this.radius*2+"px";
+                this.visual.style.height = this.radius*2+"px";
+                return this;
+            }
+        }
+
+        function collision(c1, c2){
+            let w = {x: c2.x - c1.x, y: c2.y - c1.y}, distance = (w.x**2 + w.y**2)**0.5,
+                k = 1 - (c1.radius+c2.radius)/distance,
+                c3 = new CIRCLE(Math.round(c1.x + w.x*k), Math.round(c1.y + w.y*k), c1.radius).setVisual(circle3).update();
+            
+            if(!can_collide && k < 0){
+                c1.x = c3.x;
+                c1.y = c3.y;
+            }
+
+            c1.update();
+            c2.update();
+            line1.setAttribute("x1",c1.x);
+            line1.setAttribute("y1",c1.y);
+            line1.setAttribute("x2",c2.x);
+            line1.setAttribute("y2",c2.y);
+            line2.setAttribute("x1",c2.x);
+            line2.setAttribute("y1",c2.y);
+            line2.setAttribute("x2",c3.x);
+            line2.setAttribute("y2",c3.y);
+
+            if(distance <= c1.radius+c2.radius){
+                c2.visual.classList.add("oncollision");
+            }else{
+                c2.visual.classList.remove("oncollision");
+            }
+
+            //console.log(w.x+w.y, distance);
+
+            output.innerText = 
+                `x1: ${c1.x}, y1: ${c1.y}, radius: ${c1.radius}`+
+                `\nx2: ${c2.x}, y2: ${c2.y}, radius: ${c2.radius}`+
+                `\nx3: ${c3.x}, y1: ${c3.y}, radius: ${c3.radius}`+
+                `\nw': {x:${w.x}, y:${w.y}}, |w'|: ${Math.round(distance*100)/100}, k: ${Math.round(k*100)/100}`+
+                `\ncan collide:${can_collide}, current:'${current.name}'`;
+        }
+
+        var c1 = new CIRCLE(100,100,30,'circle red').setVisual(circle1).update(),
+            c2 = new CIRCLE(300,450,50,'circle green').setVisual(circle2).update(),
+            can_collide = true,
+            current = c1,
+            mouse = {
+                x:0, y:0, 
+                update: function(e){
+                    this.x = e.pageX;
+                    this.y = e.pageY;
+                    current.x = this.x;
+                    current.y = this.y;
+                    current.update();
+                    collision(c1,c2);
+                }
+            },
+            wheelListener = function(e){
+                current.radius -= e.deltaY/16;
+                    current.update();
+                    collision(c1,c2);
+            };
+
+        mouse.update = mouse.update.bind(mouse);
+        window.addEventListener("mousemove", mouse.update);
+        window.addEventListener("mouseleave", mouse.update);
+        window.addEventListener("mouseenter", mouse.update);
+        window.addEventListener("wheel", wheelListener);
+
+        collision(c1,c2);
+
+        function onkeypress(e){
+            switch(e.keyCode){
+                case 49: 
+                    current = c1;
+                    break;
+                case 50:
+                    current = c2;
+                    break;
+                case 32:
+                    can_collide = can_collide? false: true;
+                    break;
+            }
+        }
+
+        window.addEventListener("keydown", onkeypress); 
+        
+    </script>
+</html>

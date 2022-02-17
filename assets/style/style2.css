@@ -1,0 +1,37 @@
+body{
+    background-color: #000;
+    overflow: hidden;
+}
+
+.scene{
+    position: absolute;
+    top:0;
+    left:0;
+
+    z-index: 0;
+}
+
+.object{
+    position: absolute;
+    top: 0;
+    left: 0;
+    
+    z-index: 0;
+}
+
+.interface{
+    position: absolute;
+    top:0;
+    left:0;
+
+    z-index: 1000;
+}
+
+img{
+    border: 2px solid rgba(126, 255, 86, 0.247);
+}
+
+.output_text{
+    color : white;
+    font-family: sans-serif;
+}
